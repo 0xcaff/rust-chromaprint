@@ -1,6 +1,17 @@
 # rust-chromaprint
 A pure Rust implementation of [chromaprint].
 
+## Progress
+
+This library is currently incomplete.
+
+* [ ] FFT With Overlaps
+* [x] Chroma
+* [ ] Chroma Filter
+* [ ] Chroma Normalizer
+* [ ] Fingerprint Calculator
+* [ ] Fingerprint Compression
+
 ## Implementation Notes
 
 The [C library][chromaprint-git] is really clean, and this [post][blog] by the
@@ -56,4 +67,3 @@ the wasm32-unknown-unknown target.
 [chromaprint]: https://acoustid.org/chromaprint
 [chromaprint-git]: https://github.com/acoustid/chromaprint
 [blog]: https://oxygene.sk/2011/01/how-does-chromaprint-work/
-
