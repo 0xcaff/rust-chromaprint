@@ -7,7 +7,7 @@ This library is currently incomplete.
 
 * [ ] FFT With Overlaps
 * [x] Chroma
-* [ ] Chroma Filter
+* [x] Chroma Filter
 * [ ] Chroma Normalizer
 * [ ] Fingerprint Calculator
 * [ ] Fingerprint Compression

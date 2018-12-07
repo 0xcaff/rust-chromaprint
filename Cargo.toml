@@ -4,3 +4,6 @@ version = "0.1.0"
 authors = ["Martin Charles <martincharles07@gmail.com>"]
 
 [dependencies]
+
+[dev-dependencies]
+approx = "0.3.0"

@@ -1,4 +1,9 @@
 mod chroma;
+mod chroma_filter;
+
+#[cfg(test)]
+#[macro_use]
+extern crate approx;
 
 pub struct Fingerprinter;
 
