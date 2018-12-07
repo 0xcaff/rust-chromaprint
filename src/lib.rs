@@ -1,5 +1,6 @@
 mod chroma;
 mod chroma_filter;
+mod chroma_normalize;
 
 #[cfg(test)]
 #[macro_use]
