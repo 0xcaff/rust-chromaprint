@@ -1,6 +1,7 @@
 mod chroma;
 mod chroma_filter;
 mod chroma_normalize;
+mod filter;
 mod quantizer;
 mod rolling_integral_image;
 
