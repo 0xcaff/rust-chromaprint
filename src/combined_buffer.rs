@@ -1,14 +1,17 @@
-pub struct CombinedBuffer<'a, 'b, T> where T: 'a + 'b {
+pub struct CombinedBuffer<'a, 'b, T>
+where
+    T: 'a + 'b,
+{
     a: &'a [T],
     b: &'b [T],
 }
 
-impl <'a, 'b, T> CombinedBuffer<'a, 'b, T> where T: Clone {
+impl<'a, 'b, T> CombinedBuffer<'a, 'b, T>
+where
+    T: Clone,
+{
     pub fn new(a: &'a [T], b: &'b [T]) -> CombinedBuffer<'a, 'b, T> {
-        CombinedBuffer {
-            a,
-            b,
-        }
+        CombinedBuffer { a, b }
     }
 
     pub fn len(&self) -> usize {
@@ -17,7 +20,7 @@ impl <'a, 'b, T> CombinedBuffer<'a, 'b, T> where T: Clone {
 
     pub fn read(&self, start_idx: usize, size: usize) -> Vec<T> {
         if start_idx + size < self.a.len() {
-            return self.a[start_idx..(start_idx + size)].to_vec()
+            return self.a[start_idx..(start_idx + size)].to_vec();
         }
 
         if start_idx >= self.a.len() {

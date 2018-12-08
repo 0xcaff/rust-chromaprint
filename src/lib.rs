@@ -1,11 +1,11 @@
 mod chroma;
 mod chroma_filter;
 mod chroma_normalize;
+mod combined_buffer;
 mod filter;
+mod fingerprint_calculator;
 mod quantizer;
 mod rolling_integral_image;
-mod fingerprint_calculator;
-mod combined_buffer;
 mod slicer;
 
 #[cfg(test)]
