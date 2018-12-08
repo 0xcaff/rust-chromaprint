@@ -1,7 +1,10 @@
+extern crate rustfft;
+
 mod chroma;
 mod chroma_filter;
 mod chroma_normalize;
 mod combined_buffer;
+mod fft;
 mod filter;
 mod fingerprint_calculator;
 mod quantizer;

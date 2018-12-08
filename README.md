@@ -5,7 +5,7 @@ A pure Rust implementation of [chromaprint].
 
 This library is currently incomplete.
 
-* [ ] FFT With Overlaps
+* [x] FFT With Overlaps
 * [x] Chroma
 * [x] Chroma Filter
 * [x] Chroma Normalizer

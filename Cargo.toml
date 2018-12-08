@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Martin Charles <martincharles07@gmail.com>"]
 
 [dependencies]
+rustfft = "2.1.0"
 
 [dev-dependencies]
 approx = "0.3.0"
