@@ -15,6 +15,9 @@ mod slicer;
 #[macro_use]
 extern crate approx;
 
+#[cfg(test)]
+mod tests;
+
 pub struct Fingerprinter;
 
 impl Fingerprinter {
