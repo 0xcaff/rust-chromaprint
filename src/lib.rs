@@ -8,6 +8,7 @@ mod fft;
 mod filter;
 mod fingerprint_calculator;
 mod quantizer;
+mod resampler;
 mod rolling_integral_image;
 mod slicer;
 
