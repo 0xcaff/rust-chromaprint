@@ -5,6 +5,8 @@ mod filter;
 mod quantizer;
 mod rolling_integral_image;
 mod fingerprint_calculator;
+mod combined_buffer;
+mod slicer;
 
 #[cfg(test)]
 #[macro_use]
@@ -17,7 +19,7 @@ impl Fingerprinter {
         Fingerprinter
     }
 
-    pub fn feed(&mut self, raw_pcm: &[f32]) {
+    pub fn feed(&mut self, raw_pcm: &[i16]) {
         unimplemented!()
     }
 
