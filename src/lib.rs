@@ -4,6 +4,7 @@ mod chroma_normalize;
 mod filter;
 mod quantizer;
 mod rolling_integral_image;
+mod fingerprint_calculator;
 
 #[cfg(test)]
 #[macro_use]

@@ -9,7 +9,7 @@ This library is currently incomplete.
 * [x] Chroma
 * [x] Chroma Filter
 * [x] Chroma Normalizer
-* [ ] Fingerprint Calculator
+* [x] Fingerprint Calculator
 * [ ] Fingerprint Compression
 
 ## Implementation Notes
