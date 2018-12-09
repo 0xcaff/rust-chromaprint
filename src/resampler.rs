@@ -196,13 +196,15 @@ fn make_filter_bank(
     let mut tab = vec![0.0f64; tap_count];
     let center = (tap_count - 1) / 2;
 
-    factor = factor.max(1.0);
+    factor = factor.min(1.0);
 
     for phase in 0..phase_count {
         let mut norm = 0.0;
 
         for i in 0..tap_count {
-            x = PI * (((i - center) as f64) - ((phase as f64) / (phase_count as f64))) * factor;
+            x = PI
+                * ((i as i32 - center as i32) as f64 - phase as f64 / phase_count as f64)
+                * factor;
             if x == 0.0 {
                 y = 1.0;
             } else {
