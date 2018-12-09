@@ -1,31 +1,33 @@
 use std::f64::consts::PI;
 
+const FILTER_SHIFT: i32 = 15;
+
 pub struct Resampler {
-    phase_shift: u32,
-    phase_mask: u32,
-    linear: u32,
-    filter_length: u32,
+    phase_shift: i32,
+    phase_mask: i32,
+    linear: bool,
+    filter_length: i32,
     filter_bank: Vec<i16>,
-    src_incr: u32,
-    ideal_dst_incr: u32,
-    dst_incr: u32,
+    src_incr: i32,
+    ideal_dst_incr: i32,
+    dst_incr: i32,
     index: i32,
-    compensation_distance: u32,
-    frac: u32,
+    compensation_distance: i32,
+    frac: i32,
 }
 
 impl Resampler {
     pub fn new(
-        out_rate: u32,
-        in_rate: u32,
-        filter_size: u32,
-        phase_shift: u32,
-        linear: u32,
+        out_rate: i32,
+        in_rate: i32,
+        filter_size: i32,
+        phase_shift: i32,
+        linear: bool,
         cutoff: f64,
     ) -> Resampler {
         let factor = ((out_rate as f64) * cutoff / (in_rate as f64)).min(1.0);
         let phase_count = 1 << phase_shift;
-        let filter_length = ((filter_size as f64 / factor).ceil() as u32).max(1);
+        let filter_length = ((filter_size as f64 / factor).ceil() as i32).max(1);
 
         let mut filter_bank = vec![0i16; (filter_length * (phase_count + 1)) as usize];
         make_filter_bank(
@@ -63,14 +65,112 @@ impl Resampler {
     /// Resamples the contents of `src` and writes the output to `dst`.
     ///
     /// # Returns
-    /// A tuple of the number of bytes consumed from `src` and the number of bytes written in `dst`.
+    /// A tuple of the number of bytes consumed from `src` and the index of the
+    /// last valid byte in `dst`.
     pub fn resample(&mut self, src: &[i16], dst: &mut [i16]) -> (usize, usize) {
         let mut consumed = 0;
-        let mut dst_index = 0;
+        let mut last_dst_idx: i32 = 0;
 
-        // TODO: Implement
+        let mut index = self.index;
+        let mut frac = self.frac;
+        let mut dst_incr_frac = self.dst_incr % self.src_incr;
+        let mut dst_incr = self.dst_incr / self.src_incr;
 
-        (consumed, dst_index)
+        let mut compensation_distance = self.compensation_distance;
+        if compensation_distance == 0 && self.filter_length == 1 && self.phase_shift == 0 {
+            let mut index2 = (index as i64) << 32;
+            let incr = ((1 << 32) * self.dst_incr / self.src_incr) as i64;
+
+            let dst_size = (dst.len() as i64).min(
+                (src.len() as i32 - 1 - index) as i64 * (self.src_incr as i64)
+                    / (self.dst_incr as i64),
+            );
+
+            for dst_idx in 0..(dst_size as usize) {
+                dst[dst_idx] = src[(index2 >> 32) as usize];
+                index2 += incr;
+
+                last_dst_idx = last_dst_idx
+            }
+
+            frac += last_dst_idx * dst_incr_frac;
+            index += last_dst_idx * dst_incr;
+            index += frac / self.src_incr;
+            frac %= self.src_incr;
+        } else {
+            for dst_index in 0..dst.len() {
+                let filter = &self.filter_bank;
+                let filter_offset = (self.filter_length * (index & self.phase_mask)) as usize;
+
+                let sample_index = index >> self.phase_shift;
+                let mut val: i32 = 0;
+
+                if sample_index < 0 {
+                    for i in 0..(self.filter_length as usize) {
+                        val += (src[(sample_index + 1).abs() as usize % src.len()]
+                            * filter[filter_offset + i]) as i32;
+                    }
+                } else if sample_index + self.filter_length > src.len() as i32 {
+                    break;
+                } else if self.linear {
+                    let mut v2: i32 = 0;
+
+                    for i in 0..self.filter_length {
+                        val += (src[(sample_index + i) as usize] as i32)
+                            * (filter[(filter_offset as i32 + i) as usize] as i32);
+                        v2 += (src[sample_index as usize] as i32)
+                            * (filter[(filter_offset as i32 + i + self.filter_length) as usize]
+                                as i32);
+                    }
+
+                    val +=
+                        ((v2 as i64 - val as i64) * (frac as i64) / (self.src_incr as i64)) as i32;
+                } else {
+                    for i in 0..self.filter_length {
+                        val += (src[(sample_index + i) as usize] as i32)
+                            * (filter[(filter_offset as i32 + i) as usize] as i32);
+                    }
+                }
+
+                val = (val + (1 << (FILTER_SHIFT - 1))) >> FILTER_SHIFT;
+                dst[dst_index] = if (val as u32 + 32768 as u32) > 65535 {
+                    (val >> 31) ^ 32767
+                } else {
+                    val
+                } as i16;
+
+                frac += dst_incr_frac;
+                index += dst_incr;
+                if frac >= self.src_incr {
+                    frac -= self.src_incr;
+                    index += 1;
+                }
+
+                if dst_index as i32 + 1 == compensation_distance {
+                    compensation_distance = 0;
+                    dst_incr_frac = self.ideal_dst_incr % self.src_incr;
+                    dst_incr = self.ideal_dst_incr / self.src_incr;
+                }
+
+                last_dst_idx = dst_index as i32
+            }
+        }
+
+        consumed = index.max(0) >> self.phase_shift;
+        if index >= 0 {
+            index &= self.phase_mask;
+        }
+
+        if compensation_distance != 0 {
+            compensation_distance -= last_dst_idx
+        }
+
+        self.frac = frac;
+        self.index = index;
+        self.dst_incr = dst_incr_frac + self.src_incr * dst_incr;
+        self.compensation_distance = compensation_distance;
+
+        (consumed as usize, last_dst_idx as usize)
     }
 }
 
@@ -82,8 +182,8 @@ impl Resampler {
 fn make_filter_bank(
     filter: &mut [i16],
     mut factor: f64,
-    tap_count: u32,
-    phase_count: u32,
+    tap_count: i32,
+    phase_count: i32,
     scale: f64,
 ) {
     let tap_count = tap_count as usize;
