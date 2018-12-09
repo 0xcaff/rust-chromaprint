@@ -1,14 +1,14 @@
 use std::f64::consts::PI;
 
 pub struct Resampler {
-    phase_shift: usize,
-    phase_mask: usize,
+    phase_shift: u32,
+    phase_mask: u32,
     linear: u32,
-    filter_length: usize,
+    filter_length: u32,
     filter_bank: Vec<i16>,
     src_incr: u32,
-    ideal_dst_incr: usize,
-    dst_incr: usize,
+    ideal_dst_incr: u32,
+    dst_incr: u32,
     index: i32,
     compensation_distance: u32,
     frac: u32,
@@ -17,17 +17,17 @@ pub struct Resampler {
 impl Resampler {
     pub fn new(
         out_rate: u32,
-        in_rate: usize,
+        in_rate: u32,
         filter_size: u32,
-        phase_shift: usize,
+        phase_shift: u32,
         linear: u32,
         cutoff: f64,
     ) -> Resampler {
         let factor = ((out_rate as f64) * cutoff / (in_rate as f64)).min(1.0);
         let phase_count = 1 << phase_shift;
-        let filter_length = ((filter_size as f64 / factor).ceil() as usize).max(1);
+        let filter_length = ((filter_size as f64 / factor).ceil() as u32).max(1);
 
-        let mut filter_bank = vec![0i16; filter_length * (phase_count + 1)];
+        let mut filter_bank = vec![0i16; (filter_length * (phase_count + 1)) as usize];
         make_filter_bank(
             &mut filter_bank,
             factor,
@@ -38,9 +38,10 @@ impl Resampler {
         for start_idx in 0..(filter_length - 1) {
             let end_idx = filter_length * phase_count + 1 + start_idx;
 
-            filter_bank[end_idx] = filter_bank[start_idx]
+            filter_bank[end_idx as usize] = filter_bank[start_idx as usize]
         }
-        filter_bank[filter_length * phase_count] = filter_bank[filter_length - 1];
+        filter_bank[(filter_length * phase_count) as usize] =
+            filter_bank[(filter_length - 1) as usize];
 
         let dst_incr = in_rate * phase_count;
 
@@ -59,9 +60,13 @@ impl Resampler {
         }
     }
 
+    /// Resamples the contents of `src` and writes the output to `dst`.
+    ///
+    /// # Returns
+    /// A tuple of the number of bytes consumed from `src` and the number of bytes written in `dst`.
     pub fn resample(&mut self, src: &[i16], dst: &mut [i16]) -> (usize, usize) {
-        let consumed = 0;
-        let dst_index = 0;
+        let mut consumed = 0;
+        let mut dst_index = 0;
 
         // TODO: Implement
 
@@ -77,10 +82,13 @@ impl Resampler {
 fn make_filter_bank(
     filter: &mut [i16],
     mut factor: f64,
-    tap_count: usize,
-    phase_count: usize,
+    tap_count: u32,
+    phase_count: u32,
     scale: f64,
 ) {
+    let tap_count = tap_count as usize;
+    let phase_count = phase_count as usize;
+
     let mut x = 0.0;
     let mut y = 0.0;
     let mut w = 0.0;
