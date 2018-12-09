@@ -1,5 +1,6 @@
 extern crate rustfft;
 
+mod audio_processor;
 mod chroma;
 mod chroma_filter;
 mod chroma_normalize;

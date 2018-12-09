@@ -79,7 +79,7 @@ impl Resampler {
         let mut compensation_distance = self.compensation_distance;
         if compensation_distance == 0 && self.filter_length == 1 && self.phase_shift == 0 {
             let mut index2 = (index as i64) << 32;
-            let incr = ((1 << 32) * self.dst_incr / self.src_incr) as i64;
+            let incr = (1 << 32) * self.dst_incr as i64 / self.src_incr as i64;
 
             let dst_size = (dst.len() as i64).min(
                 (src.len() as i32 - 1 - index) as i64 * (self.src_incr as i64)
