@@ -8,6 +8,7 @@ This library is currently incomplete.
 Something is wrong with the filter initialization.
 
 * [x] Apparently Resampling is Needed Too
+* [x] Some Hamming Window Thing
 * [x] FFT With Overlaps
 * [x] Chroma
 * [x] Chroma Filter
