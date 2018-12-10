@@ -1,7 +1,3 @@
-const MIN_FREQ: u32 = 28;
-const MAX_FREQ: u32 = 3520;
-const DEFAULT_SAMPLE_RATE: u32 = 11025;
-
 pub struct Chroma {
     note_range: NoteRange,
 }
@@ -15,10 +11,10 @@ impl Chroma {
 
     pub fn handle_frame(&self, frame: &[f64]) -> [f64; 12] {
         let mut notes = [0f64; 12];
+        let note_for_idx = self.note_range.notes();
 
         for idx in self.note_range.min_idx..self.note_range.max_idx {
-            let note = self.note_range.get_note_for_idx(idx as usize);
-            notes[note as usize] += frame[idx as usize];
+            notes[note_for_idx[idx as usize] as usize] += frame[idx as usize];
         }
 
         notes
@@ -55,8 +51,8 @@ impl NoteRange {
         }
     }
 
-    fn get_note_for_idx(&self, idx: usize) -> u8 {
-        self.notes[idx]
+    pub fn notes(&self) -> &[u8] {
+        &self.notes
     }
 }
 
@@ -68,7 +64,7 @@ impl NoteRange {
 /// * `sample_rate` - The maximum frequency.
 fn freq_to_idx(freq: u32, frame_size: u32, sample_rate: u32) -> u32 {
     let size_per_frequency = (frame_size as f32) / (sample_rate as f32);
-    return (freq as f32 * size_per_frequency) as u32;
+    return (freq as f32 * size_per_frequency).round() as u32;
 }
 
 /// Converts an index in an FFT array to a frequency.
@@ -77,24 +73,32 @@ fn freq_to_idx(freq: u32, frame_size: u32, sample_rate: u32) -> u32 {
 /// * `idx` - The index in the FFT array.
 /// * `frame_size` - Size of the FFT frame.
 /// * `sample_rate` - The maximum frequency.
-fn idx_to_freq(idx: u32, frame_size: u32, sample_rate: u32) -> u32 {
-    let frequency_per_size = (sample_rate as f32) / (frame_size as f32);
-    return (idx as f32 * frequency_per_size) as u32;
+fn idx_to_freq(idx: u32, frame_size: u32, sample_rate: u32) -> f64 {
+    let frequency_per_size = (sample_rate as f64) / (frame_size as f64);
+    return idx as f64 * frequency_per_size;
 }
 
 /// Converts a frequency in Hz into a note.
 ///
 /// # Returns
 /// A value between 0 and 11. 0 corresponds to A and 11 to GSharp.
-fn note_from_freq(frequency: u32) -> u8 {
+fn note_from_freq(frequency: f64) -> u8 {
     let octave = ((frequency as f64) / (440f64 / 16f64)).log2();
     (12f64 * (octave - octave.floor())) as u8
 }
 
 #[cfg(test)]
 mod tests {
+    use super::freq_to_idx;
     use super::note_from_freq;
-    use super::Chroma;
+    use super::{Chroma, NoteRange};
+    use chroma_normalize::normalize_vector;
+    use test_data;
+
+    #[test]
+    fn test_freq_to_idx() {
+        assert_eq!(freq_to_idx(3520, 4096, 11025), 1308);
+    }
 
     #[test]
     fn chroma_normal_a() {
@@ -133,74 +137,32 @@ mod tests {
     }
 
     #[test]
-    fn test_note_from_freq() {
-        assert_eq!(note_from_freq(28), 0);
-        assert_eq!(note_from_freq(440), 0);
+    fn test_notes_freq() {
+        const MIN_FREQ: u32 = 28;
+        const MAX_FREQ: u32 = 3520;
+        const DEFAULT_SAMPLE_RATE: u32 = 11025;
+        const FRAME_SIZE: u32 = 4096;
+
+        let note_range = NoteRange::new(MIN_FREQ, MAX_FREQ, FRAME_SIZE, DEFAULT_SAMPLE_RATE);
+        assert_eq!(&test_data::get_notes()[..], note_range.notes());
     }
 
-    /*
-    Test Generated With:
-
-        #include <iostream>
-        #include <math.h>
-        using namespace std;
-
-        inline double FreqToOctave(double freq, double base = 440.0 / 16.0)
-        {
-            return log(freq / base) / log(2.0);
-        }
-
-        int Note(int frequency)
-        {
-            double octave = FreqToOctave(frequency);
-            return (int)(12 * (octave - floor(octave))) % 12;
-        }
-
-        int main() {
-            for (int i = 28; i <= 3520; i += 100) {
-                std::cout <<
-                    "assert_eq!(note_from_freq(" << i << "), " <<
-                    Note(i) << ");" <<
-                    std::endl;
-            }
-        }
-    */
     #[test]
-    fn test_notes_from_freq() {
-        assert_eq!(note_from_freq(28), 0);
-        assert_eq!(note_from_freq(128), 2);
-        assert_eq!(note_from_freq(228), 0);
-        assert_eq!(note_from_freq(328), 6);
-        assert_eq!(note_from_freq(428), 11);
-        assert_eq!(note_from_freq(528), 3);
-        assert_eq!(note_from_freq(628), 6);
-        assert_eq!(note_from_freq(728), 8);
-        assert_eq!(note_from_freq(828), 10);
-        assert_eq!(note_from_freq(928), 0);
-        assert_eq!(note_from_freq(1028), 2);
-        assert_eq!(note_from_freq(1128), 4);
-        assert_eq!(note_from_freq(1228), 5);
-        assert_eq!(note_from_freq(1328), 7);
-        assert_eq!(note_from_freq(1428), 8);
-        assert_eq!(note_from_freq(1528), 9);
-        assert_eq!(note_from_freq(1628), 10);
-        assert_eq!(note_from_freq(1728), 11);
-        assert_eq!(note_from_freq(1828), 0);
-        assert_eq!(note_from_freq(1928), 1);
-        assert_eq!(note_from_freq(2028), 2);
-        assert_eq!(note_from_freq(2128), 3);
-        assert_eq!(note_from_freq(2228), 4);
-        assert_eq!(note_from_freq(2328), 4);
-        assert_eq!(note_from_freq(2428), 5);
-        assert_eq!(note_from_freq(2528), 6);
-        assert_eq!(note_from_freq(2628), 6);
-        assert_eq!(note_from_freq(2728), 7);
-        assert_eq!(note_from_freq(2828), 8);
-        assert_eq!(note_from_freq(2928), 8);
-        assert_eq!(note_from_freq(3028), 9);
-        assert_eq!(note_from_freq(3128), 9);
-        assert_eq!(note_from_freq(3228), 10);
-        assert_eq!(note_from_freq(3328), 11);
-        assert_eq!(note_from_freq(3428), 11);
+    fn test_chroma() {
+        let fft_frames = test_data::get_fft_frames();
+        const MIN_FREQ: u32 = 28;
+        const MAX_FREQ: u32 = 3520;
+        const FRAME_SIZE: u32 = 4096;
+        const TARGET_SAMPLE_RATE: u32 = 11025;
+
+        let expected = test_data::get_chroma_features();
+        let chroma = Chroma::new(MIN_FREQ, MAX_FREQ, FRAME_SIZE, TARGET_SAMPLE_RATE);
+
+        let features: Vec<_> = fft_frames
+            .into_iter()
+            .map(|frame| chroma.handle_frame(&frame))
+            .collect();
+
+        assert_eq!(expected, features);
     }
 }

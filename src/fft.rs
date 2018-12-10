@@ -72,7 +72,7 @@ mod tests {
     use super::{prepare_hamming_window, Fft, FRAME_SIZE};
     use std::error::Error;
     use std::path::PathBuf;
-    use test_data::get_fft_expected_frames;
+    use test_data;
     use tests::load_audio_file;
 
     const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
@@ -111,7 +111,7 @@ mod tests {
             frames.push(frame);
         });
 
-        let expected = get_fft_expected_frames();
+        let expected = test_data::get_fft_frames();
         for idx in 0..expected.len() {
             let expected_row = &expected[idx];
             let actual_row = &frames[idx];

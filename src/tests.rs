@@ -46,9 +46,9 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     let mut image = Vec::new();
 
     let mut resampled = vec![0i16; samples.len()];
-    resampler.resample(&samples, &mut resampled);
+    let (_, last_idx) = resampler.resample(&samples, &mut resampled);
 
-    fft.consume(&resampled, |frame| {
+    fft.consume(&resampled[..(last_idx + 1)], |frame| {
         let chroma_features = chroma.handle_frame(&frame);
         let chroma_features_normalized = normalize_vector(chroma_features);
         image.push(chroma_features_normalized);
@@ -113,7 +113,15 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
         ],
     ];
 
-    assert_eq!(expected, image);
+    for row_idx in 0..expected.len() {
+        for col_idx in 0..12 {
+            assert_abs_diff_eq!(
+                expected[row_idx][col_idx],
+                image[row_idx][col_idx],
+                epsilon = 1e-6
+            );
+        }
+    }
 
     Ok(())
 }
