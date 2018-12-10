@@ -1,3 +1,4 @@
+use classifiers::Classifiers;
 use filter::Filter;
 use quantizer::Quantizer;
 use rolling_integral_image::RollingIntegralImage;
@@ -5,13 +6,13 @@ use rolling_integral_image::RollingIntegralImage;
 const FILTER_WIDTH: usize = 16;
 
 pub struct FingerprintCalculator {
-    classifiers: [(Filter, Quantizer); 12],
+    classifiers: Classifiers,
     image: RollingIntegralImage,
     fingerprint: Vec<u32>,
 }
 
 impl FingerprintCalculator {
-    pub fn new(classifiers: [(Filter, Quantizer); 12]) -> FingerprintCalculator {
+    pub fn new(classifiers: Classifiers) -> FingerprintCalculator {
         FingerprintCalculator {
             classifiers,
             image: RollingIntegralImage::new(256),
