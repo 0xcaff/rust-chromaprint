@@ -117,7 +117,10 @@ mod tests {
             let actual_row = &frames[idx];
 
             for row_idx in 0..expected_row.len() {
-                assert_ulps_eq!(expected_row[row_idx], actual_row[row_idx], epsilon = 1e-1);
+                // This epsilon is kinda large because of the differing FFT implementations used.
+                // This is compared to the C thing which uses some implementation and the Rust thing
+                // which uses rustfft.
+                assert_ulps_eq!(expected_row[row_idx], actual_row[row_idx], epsilon = 1e-2);
             }
         }
 
