@@ -18,7 +18,7 @@ pub struct Fft {
 impl Fft {
     pub fn new() -> Fft {
         Fft {
-            slicer: Some(Slicer::new(FRAME_SIZE, FRAME_SIZE - overlap)),
+            slicer: Some(Slicer::new(FRAME_SIZE, FRAME_SIZE - OVERLAP)),
             fft: Radix4::new(FRAME_SIZE, false),
             hamming_window: prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f64),
         }
@@ -70,7 +70,7 @@ fn prepare_hamming_window(size: usize, scale: f64) -> Vec<f64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{prepare_hamming_window, Fft, FRAME_SIZE};
+    use super::{prepare_hamming_window, Fft};
     use std::error::Error;
     use std::path::PathBuf;
     use test_data;

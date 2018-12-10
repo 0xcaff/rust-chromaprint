@@ -68,7 +68,7 @@ impl Resampler {
     /// A tuple of the number of bytes consumed from `src` and the index of the
     /// last valid byte in `dst`.
     pub fn resample(&mut self, src: &[i16], dst: &mut [i16]) -> (usize, usize) {
-        let mut consumed = 0;
+        let consumed;
         let mut last_dst_idx: i32 = 0;
 
         let mut index = self.index;
@@ -189,9 +189,9 @@ fn make_filter_bank(
     let tap_count = tap_count as usize;
     let phase_count = phase_count as usize;
 
-    let mut x = 0.0;
-    let mut y = 0.0;
-    let mut w = 0.0;
+    let mut x;
+    let mut y;
+    let mut w;
 
     let mut tab = vec![0.0f64; tap_count];
     let center = (tap_count - 1) / 2;

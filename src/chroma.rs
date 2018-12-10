@@ -90,9 +90,7 @@ fn note_from_freq(frequency: f64) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::freq_to_idx;
-    use super::note_from_freq;
     use super::{Chroma, NoteRange};
-    use chroma_normalize::normalize_vector;
     use test_data;
 
     #[test]

@@ -1,6 +1,4 @@
 use classifiers::Classifiers;
-use filter::Filter;
-use quantizer::Quantizer;
 use rolling_integral_image::RollingIntegralImage;
 
 const FILTER_WIDTH: usize = 16;

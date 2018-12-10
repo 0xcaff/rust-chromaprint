@@ -1,4 +1,3 @@
-use audio_processor::AudioProcessor;
 use chroma::Chroma;
 use chroma_normalize::normalize_vector;
 use fft::Fft;
