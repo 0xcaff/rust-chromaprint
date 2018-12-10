@@ -147,22 +147,22 @@ mod tests {
 
         inline double FreqToOctave(double freq, double base = 440.0 / 16.0)
         {
-	        return log(freq / base) / log(2.0);
+            return log(freq / base) / log(2.0);
         }
 
         int Note(int frequency)
         {
-	        double octave = FreqToOctave(frequency);
-	        return (int)(12 * (octave - floor(octave))) % 12;
+            double octave = FreqToOctave(frequency);
+            return (int)(12 * (octave - floor(octave))) % 12;
         }
 
         int main() {
-	        for (int i = 28; i <= 3520; i += 100) {
-		        std::cout <<
-		            "assert_eq!(note_from_freq(" << i << "), " <<
-		            Note(i) << ");" <<
-		            std::endl;
-	        }
+            for (int i = 28; i <= 3520; i += 100) {
+                std::cout <<
+                    "assert_eq!(note_from_freq(" << i << "), " <<
+                    Note(i) << ");" <<
+                    std::endl;
+            }
         }
     */
     #[test]
