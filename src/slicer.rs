@@ -1,4 +1,5 @@
 use combined_buffer::CombinedBuffer;
+use std::mem;
 
 pub struct Slicer<T> {
     slice_size: usize,
@@ -41,6 +42,10 @@ where
 
             buffer
         }
+    }
+
+    pub fn flush(&mut self) -> Vec<T> {
+        mem::replace(&mut self.buffer, Vec::new())
     }
 }
 

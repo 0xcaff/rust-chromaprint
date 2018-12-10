@@ -41,5 +41,18 @@ impl AudioProcessor {
         self.slicer = Some(slicer);
     }
 
-    // TODO: Flush
+    /// Transcodes any un-transcoded samples and returns if any are left.
+    pub fn flush(&mut self) -> Option<Vec<i16>> {
+        let slicer_ref = self.slicer.as_mut().unwrap();
+        let remaining = slicer_ref.flush();
+        if remaining.len() > 0 {
+            let mut dst = vec![0i16; MAX_BUFFER_SIZE];
+            let (_, last_idx) = self.resampler.resample(&remaining, &mut dst);
+            dst.truncate(last_idx + 1);
+
+            Some(dst)
+        } else {
+            None
+        }
+    }
 }
