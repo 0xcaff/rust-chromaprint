@@ -37,8 +37,7 @@ impl Fft {
             let mut output: Vec<Complex<f64>> = vec![Complex::zero(); FRAME_SIZE];
             self.fft.process(&mut converted, &mut output);
 
-            let doubles: Vec<f64> = output.into_iter().map(|num| num.re).collect();
-            let folded = fold_output(&doubles);
+            let folded = fold_output(&output);
 
             consumer(folded);
         });
@@ -47,17 +46,12 @@ impl Fft {
     }
 }
 
-pub fn fold_output(fft: &[f64]) -> Vec<f64> {
+pub fn fold_output(fft: &[Complex<f64>]) -> Vec<f64> {
     let half_input = fft.len() / 2;
     let mut output = vec![0.0; half_input + 1];
 
-    output[0] = fft[0] * fft[0];
-    output[half_input] = fft[half_input] * fft[half_input];
-
-    for idx in 1..half_input {
-        let rev_idx = half_input - 1 - idx;
-
-        output[idx] = fft[idx] * fft[idx] + fft[rev_idx] * fft[rev_idx]
+    for idx in 0..(half_input + 1) {
+        output[idx] = fft[idx].re * fft[idx].re + fft[idx].im * fft[idx].im;
     }
 
     output
@@ -75,7 +69,13 @@ fn prepare_hamming_window(size: usize, scale: f64) -> Vec<f64> {
 
 #[cfg(test)]
 mod tests {
-    use super::prepare_hamming_window;
+    use super::{prepare_hamming_window, Fft, FRAME_SIZE};
+    use std::error::Error;
+    use std::path::PathBuf;
+    use test_data::get_fft_expected_frames;
+    use tests::load_audio_file;
+
+    const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
     #[test]
     fn test_prepare_hamming_window() {
@@ -96,5 +96,31 @@ mod tests {
         for idx in 0..10 {
             assert_abs_diff_eq!(expected[idx], window[idx], epsilon = 1e-9);
         }
+    }
+
+    #[test]
+    fn test_fft() -> Result<(), Box<dyn Error>> {
+        let samples = load_audio_file(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("./test_data/test_stero_44100_resampled_11025.raw"),
+        )?;
+
+        let mut fft = Fft::new(OVERLAP);
+        let mut frames = Vec::new();
+        fft.consume(&samples, |frame| {
+            frames.push(frame);
+        });
+
+        let expected = get_fft_expected_frames();
+        for idx in 0..expected.len() {
+            let expected_row = &expected[idx];
+            let actual_row = &frames[idx];
+
+            for row_idx in 0..expected_row.len() {
+                assert_ulps_eq!(expected_row[row_idx], actual_row[row_idx], epsilon = 1e-1);
+            }
+        }
+
+        Ok(())
     }
 }

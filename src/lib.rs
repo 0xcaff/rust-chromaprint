@@ -20,6 +20,9 @@ extern crate approx;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod test_data;
+
 pub struct Fingerprinter;
 
 impl Fingerprinter {
