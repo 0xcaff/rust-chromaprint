@@ -5,7 +5,6 @@ authors = ["Martin Charles <martincharles07@gmail.com>"]
 
 [dependencies]
 rustfft = "2.1.0"
-sample = "0.10.0"
 
 [dev-dependencies]
 approx = "0.3.0"

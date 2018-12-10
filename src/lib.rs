@@ -1,5 +1,4 @@
 extern crate rustfft;
-extern crate sample;
 
 mod audio_processor;
 mod chroma;

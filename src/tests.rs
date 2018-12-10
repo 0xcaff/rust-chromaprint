@@ -1,3 +1,4 @@
+use audio_processor::AudioProcessor;
 use chroma::Chroma;
 use chroma_normalize::normalize_vector;
 use fft::Fft;
@@ -8,39 +9,23 @@ use std::mem;
 use std::path::Path;
 use std::path::PathBuf;
 
-use sample::interpolate::Linear;
-use sample::signal::from_interleaved_samples_iter;
-use sample::signal::Signal;
-use sample::Sample;
-
 const FRAME_SIZE: usize = 4096;
 const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
 const MIN_FREQ: u32 = 28;
 const MAX_FREQ: u32 = 3520;
-const TARGET_SAMPLE_RATE: f64 = 11025.0;
-const INPUT_SAMPLE_RATE: f64 = 44100.0;
+const TARGET_SAMPLE_RATE: u16 = 11025;
+const INPUT_SAMPLE_RATE: u16 = 44100;
 
 #[test]
 fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./test_data/test_stereo_44100.raw");
-
-    let audio_file = load_audio_file(&path)?;
-    let mono_input: Vec<i16> = audio_file
+    let samples: Vec<i16> = load_audio_file(&path)?
         .chunks(2)
         .map(|chunk| (chunk[0] + chunk[1]) / (chunk.len() as i16))
         .collect();
 
-    let mut source = from_interleaved_samples_iter(mono_input);
-
-    let interpolator = Linear::from_source(&mut source);
-    let resampled = source.from_hz_to_hz(interpolator, INPUT_SAMPLE_RATE, TARGET_SAMPLE_RATE);
-
-    let resampled_frames: Vec<i16> = resampled
-        .until_exhausted()
-        .map(|e: [i16; 1]| e[0])
-        .collect();
-
+    let mut audio_processor = AudioProcessor::new(TARGET_SAMPLE_RATE, INPUT_SAMPLE_RATE);
     let mut fft = Fft::new(OVERLAP);
     let chroma = Chroma::new(
         MIN_FREQ,
@@ -49,10 +34,13 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
         TARGET_SAMPLE_RATE as u32,
     );
     let mut image = Vec::new();
-    fft.consume(&resampled_frames, |frame| {
-        let chroma_features = chroma.handle_frame(&frame);
-        let chroma_features_normalized = normalize_vector(chroma_features);
-        image.push(chroma_features_normalized);
+
+    audio_processor.feed(&samples, |resampled_samples| {
+        fft.consume(&resampled_samples, |frame| {
+            let chroma_features = chroma.handle_frame(&frame);
+            let chroma_features_normalized = normalize_vector(chroma_features);
+            image.push(chroma_features_normalized);
+        });
     });
 
     let expected = vec![
