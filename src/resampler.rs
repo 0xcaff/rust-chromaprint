@@ -133,7 +133,7 @@ impl Resampler {
                 }
 
                 val = (val + (1 << (FILTER_SHIFT - 1))) >> FILTER_SHIFT;
-                dst[dst_index] = if (val as u32 + 32768 as u32) > 65535 {
+                dst[dst_index] = if i32::saturating_add(val, 32768) >= ::std::i32::MAX {
                     (val >> 31) ^ 32767
                 } else {
                     val
@@ -220,8 +220,8 @@ fn make_filter_bank(
         }
 
         for i in 0..tap_count {
-            filter[phase * tap_count + 1] = clip(
-                (tab[i] * scale / norm).floor() as i32,
+            filter[phase * tap_count + i] = clip(
+                (tab[i] * scale / norm).round() as i32,
                 i16::min_value() as i32,
                 i16::max_value() as i32,
             ) as i16;
@@ -255,5 +255,84 @@ fn clip(a: i32, a_min: i32, a_max: i32) -> i32 {
         a_max
     } else {
         a
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{make_filter_bank, Resampler};
+    use std::error::Error;
+    use std::path::PathBuf;
+    use tests::{load_audio_file, load_stero_audio_file};
+
+    const TARGET_SAMPLE_RATE: i32 = 11025;
+    const INPUT_SAMPLE_RATE: i32 = 44100;
+    const RESAMPLE_FILTER_LENGTH: i32 = 16;
+    const RESAMPLE_PHASE_SHIFT: i32 = 8;
+    const RESAMPLE_LINEAR: bool = false;
+    const RESAMPLE_SAMPLE_CUTOFF: f64 = 0.8;
+
+    #[test]
+    fn test_build_filter() -> Result<(), Box<dyn Error>> {
+        let out_rate = TARGET_SAMPLE_RATE;
+        let in_rate = INPUT_SAMPLE_RATE;
+        let filter_size = RESAMPLE_FILTER_LENGTH;
+        let phase_shift = RESAMPLE_PHASE_SHIFT;
+        let cutoff = RESAMPLE_SAMPLE_CUTOFF;
+
+        let factor = ((out_rate as f64) * cutoff / (in_rate as f64)).min(1.0);
+        let phase_count = 1 << phase_shift;
+        let filter_length = ((filter_size as f64 / factor).ceil() as i32).max(1);
+
+        let mut filter_bank = vec![0i16; (filter_length * (phase_count + 1)) as usize];
+        make_filter_bank(
+            &mut filter_bank,
+            factor,
+            filter_length,
+            phase_count,
+            (1 << 15) as f64,
+        );
+
+        for start_idx in 0..(filter_length - 1) {
+            let end_idx = filter_length * phase_count + 1 + start_idx;
+
+            filter_bank[end_idx as usize] = filter_bank[start_idx as usize]
+        }
+        filter_bank[(filter_length * phase_count) as usize] =
+            filter_bank[(filter_length - 1) as usize];
+
+        let expected = load_audio_file(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./test_data/filter_bank_values.raw"),
+        )?;
+        assert_eq!(expected, filter_bank);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_resample() -> Result<(), Box<dyn Error>> {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./test_data/test_stereo_44100.raw");
+        let samples = load_stero_audio_file(&path)?;
+
+        let mut resampler = Resampler::new(
+            TARGET_SAMPLE_RATE,
+            INPUT_SAMPLE_RATE,
+            RESAMPLE_FILTER_LENGTH,
+            RESAMPLE_PHASE_SHIFT,
+            RESAMPLE_LINEAR,
+            RESAMPLE_SAMPLE_CUTOFF,
+        );
+        let mut output = vec![0; samples.len()];
+        let (_, last_dst_idx) = resampler.resample(&samples, &mut output);
+        output.truncate(last_dst_idx + 1);
+
+        let expected_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("./test_data/test_stero_44100_resampled_11025.raw");
+        let expected = load_audio_file(&expected_path)?;
+
+        assert_eq!(expected, output);
+
+        Ok(())
     }
 }

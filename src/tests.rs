@@ -2,6 +2,7 @@ use audio_processor::AudioProcessor;
 use chroma::Chroma;
 use chroma_normalize::normalize_vector;
 use fft::Fft;
+use resampler::Resampler;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
@@ -14,18 +15,27 @@ const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
 const MIN_FREQ: u32 = 28;
 const MAX_FREQ: u32 = 3520;
-const TARGET_SAMPLE_RATE: u16 = 11025;
-const INPUT_SAMPLE_RATE: u16 = 44100;
+const TARGET_SAMPLE_RATE: i32 = 11025;
+const INPUT_SAMPLE_RATE: i32 = 44100;
+const RESAMPLE_FILTER_LENGTH: i32 = 16;
+const RESAMPLE_PHASE_SHIFT: i32 = 8;
+const RESAMPLE_LINEAR: bool = false;
+const RESAMPLE_SAMPLE_CUTOFF: f64 = 0.8;
 
 #[test]
 fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./test_data/test_stereo_44100.raw");
-    let samples: Vec<i16> = load_audio_file(&path)?
-        .chunks(2)
-        .map(|chunk| (chunk[0] + chunk[1]) / (chunk.len() as i16))
-        .collect();
+    let samples = load_stero_audio_file(&path)?;
 
-    let mut audio_processor = AudioProcessor::new(TARGET_SAMPLE_RATE, INPUT_SAMPLE_RATE);
+    let mut resampler = Resampler::new(
+        TARGET_SAMPLE_RATE,
+        INPUT_SAMPLE_RATE,
+        RESAMPLE_FILTER_LENGTH,
+        RESAMPLE_PHASE_SHIFT,
+        RESAMPLE_LINEAR,
+        RESAMPLE_SAMPLE_CUTOFF,
+    );
+
     let mut fft = Fft::new(OVERLAP);
     let chroma = Chroma::new(
         MIN_FREQ,
@@ -35,12 +45,13 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     );
     let mut image = Vec::new();
 
-    audio_processor.feed(&samples, |resampled_samples| {
-        fft.consume(&resampled_samples, |frame| {
-            let chroma_features = chroma.handle_frame(&frame);
-            let chroma_features_normalized = normalize_vector(chroma_features);
-            image.push(chroma_features_normalized);
-        });
+    let mut resampled = vec![0i16; samples.len()];
+    resampler.resample(&samples, &mut resampled);
+
+    fft.consume(&resampled, |frame| {
+        let chroma_features = chroma.handle_frame(&frame);
+        let chroma_features_normalized = normalize_vector(chroma_features);
+        image.push(chroma_features_normalized);
     });
 
     let expected = vec![
@@ -107,7 +118,14 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn load_audio_file<T: AsRef<Path>>(path: T) -> Result<Vec<i16>, Box<dyn Error>> {
+pub fn load_stero_audio_file<T: AsRef<Path>>(path: T) -> Result<Vec<i16>, Box<dyn Error>> {
+    Ok(load_audio_file(&path)?
+        .chunks(2)
+        .map(|chunk| (chunk[0] + chunk[1]) / (chunk.len() as i16))
+        .collect())
+}
+
+pub fn load_audio_file<T: AsRef<Path>>(path: T) -> Result<Vec<i16>, Box<dyn Error>> {
     let mut file = File::open(path)?;
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
