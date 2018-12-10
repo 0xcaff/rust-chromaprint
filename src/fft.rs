@@ -7,6 +7,7 @@ use slicer::Slicer;
 use std::f64::consts::PI;
 
 const FRAME_SIZE: usize = 4096;
+const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
 pub struct Fft {
     slicer: Option<Slicer<i16>>,
@@ -15,7 +16,7 @@ pub struct Fft {
 }
 
 impl Fft {
-    pub fn new(overlap: usize) -> Fft {
+    pub fn new() -> Fft {
         Fft {
             slicer: Some(Slicer::new(FRAME_SIZE, FRAME_SIZE - overlap)),
             fft: Radix4::new(FRAME_SIZE, false),
@@ -75,8 +76,6 @@ mod tests {
     use test_data;
     use tests::load_audio_file;
 
-    const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
-
     #[test]
     fn test_prepare_hamming_window() {
         let expected = vec![
@@ -105,7 +104,7 @@ mod tests {
                 .join("./test_data/test_stero_44100_resampled_11025.raw"),
         )?;
 
-        let mut fft = Fft::new(OVERLAP);
+        let mut fft = Fft::new();
         let mut frames = Vec::new();
         fft.consume(&samples, |frame| {
             frames.push(frame);

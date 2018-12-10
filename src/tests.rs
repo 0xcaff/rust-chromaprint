@@ -10,11 +10,9 @@ use std::mem;
 use std::path::Path;
 use std::path::PathBuf;
 
-const FRAME_SIZE: usize = 4096;
-const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
-
 const MIN_FREQ: u32 = 28;
 const MAX_FREQ: u32 = 3520;
+const FRAME_SIZE: usize = 4096;
 const TARGET_SAMPLE_RATE: i32 = 11025;
 const INPUT_SAMPLE_RATE: i32 = 44100;
 const RESAMPLE_FILTER_LENGTH: i32 = 16;
@@ -36,7 +34,7 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
         RESAMPLE_SAMPLE_CUTOFF,
     );
 
-    let mut fft = Fft::new(OVERLAP);
+    let mut fft = Fft::new();
     let chroma = Chroma::new(
         MIN_FREQ,
         MAX_FREQ,
