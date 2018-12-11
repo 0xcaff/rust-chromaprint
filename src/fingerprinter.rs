@@ -4,6 +4,7 @@ use chroma_normalize::normalize_vector;
 use classifiers;
 use fft::Fft;
 use fingerprint_calculator::FingerprintCalculator;
+use fingerprint_compressor;
 
 pub const TARGET_SAMPLE_RATE: u16 = 11025;
 pub const MIN_FREQ: u32 = 28;
@@ -75,15 +76,7 @@ impl Fingerprinter {
 pub struct Fingerprint<'a>(pub &'a [u32]);
 
 impl<'a> Fingerprint<'a> {
-    pub fn compress(self) -> CompressedFingerprint {
-        unimplemented!()
-    }
-}
-
-pub struct CompressedFingerprint(pub Vec<u8>);
-
-impl CompressedFingerprint {
-    pub fn encode(self) -> String {
-        unimplemented!()
+    pub fn compress(&self) -> Vec<u8> {
+        fingerprint_compressor::compress(self.0, 1)
     }
 }
