@@ -1,5 +1,3 @@
-const MAX_ROWS: usize = 257;
-
 /// Computes rolling areas.
 pub struct RollingIntegralImage {
     rows: Vec<[f64; 12]>,

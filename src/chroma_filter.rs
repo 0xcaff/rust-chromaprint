@@ -1,4 +1,4 @@
-const FILTER_COEFFICIENTS: [f64; 5] = [0.25, 0.75, 1.0, 0.75, 0.25];
+pub const FILTER_COEFFICIENTS: [f64; 5] = [0.25, 0.75, 1.0, 0.75, 0.25];
 
 pub struct ChromaFilter {
     filter_coefficients: &'static [f64],

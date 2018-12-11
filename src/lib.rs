@@ -27,3 +27,5 @@ mod tests;
 mod test_data;
 
 mod fingerprinter;
+
+pub use fingerprinter::{Fingerprint, Fingerprinter};

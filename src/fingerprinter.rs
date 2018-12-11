@@ -1,5 +1,6 @@
 use audio_processor::AudioProcessor;
 use chroma::Chroma;
+use chroma_filter::{ChromaFilter, FILTER_COEFFICIENTS};
 use chroma_normalize::normalize_vector;
 use classifiers;
 use fft::Fft;
@@ -15,6 +16,7 @@ pub struct Fingerprinter {
     audio_processor: Option<AudioProcessor>,
     fft: Option<Fft>,
     chroma: Chroma,
+    chroma_filter: ChromaFilter,
     fingerprint_calculator: FingerprintCalculator,
 }
 
@@ -29,6 +31,7 @@ impl Fingerprinter {
                 FRAME_SIZE as u32,
                 TARGET_SAMPLE_RATE as u32,
             ),
+            chroma_filter: ChromaFilter::new(&FILTER_COEFFICIENTS),
             fingerprint_calculator: FingerprintCalculator::new(
                 classifiers::get_default_classifier(),
             ),
@@ -62,9 +65,10 @@ impl Fingerprinter {
     fn handle_resampled(&mut self, samples: Vec<i16>, fft: &mut Fft) {
         fft.consume(&samples, |frame| {
             let features = self.chroma.handle_frame(&frame);
-            let normalized_features = normalize_vector(features);
-
-            self.fingerprint_calculator.consume(normalized_features);
+            if let Some(filtered) = self.chroma_filter.handle_features(features) {
+                let normalized_features = normalize_vector(filtered);
+                self.fingerprint_calculator.consume(normalized_features);
+            }
         });
     }
 
