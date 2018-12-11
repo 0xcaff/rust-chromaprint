@@ -84,3 +84,33 @@ impl<'a> Fingerprint<'a> {
         fingerprint_compressor::compress(self.0, 1)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+    use std::path::PathBuf;
+    use tests;
+
+    use super::Fingerprinter;
+
+    #[test]
+    fn test_fingerprinter() -> Result<(), Box<dyn Error>> {
+        let samples = tests::load_audio_file(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("./test_data/test_stereo_44100.raw"),
+        )?;
+
+        let mut fingerprinter = Fingerprinter::new(44100);
+        fingerprinter.feed(&samples);
+        fingerprinter.finish();
+
+        assert_eq!(
+            fingerprinter.fingerprint().0,
+            [
+                3740390231, 3739276119, 3730871573, 3743460629, 3743525173, 3744594229, 3727948087,
+                1584920886, 1593302326, 1593295926, 1584907318
+            ]
+        );
+
+        Ok(())
+    }
+}
