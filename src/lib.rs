@@ -4,6 +4,7 @@ mod audio_processor;
 mod chroma;
 mod chroma_filter;
 mod chroma_normalize;
+mod classifiers;
 mod combined_buffer;
 mod fft;
 mod filter;
@@ -23,34 +24,4 @@ mod tests;
 #[cfg(test)]
 mod test_data;
 
-pub struct Fingerprinter;
-
-impl Fingerprinter {
-    pub fn new() -> Fingerprinter {
-        Fingerprinter
-    }
-
-    pub fn feed(&mut self, raw_pcm: &[i16]) {
-        unimplemented!()
-    }
-
-    pub fn fingerprint(self) -> Fingerprint {
-        unimplemented!()
-    }
-}
-
-pub struct Fingerprint(pub Vec<u8>);
-
-impl Fingerprint {
-    pub fn compress(self) -> CompressedFingerprint {
-        unimplemented!()
-    }
-}
-
-pub struct CompressedFingerprint(pub Vec<u8>);
-
-impl CompressedFingerprint {
-    pub fn encode(self) -> String {
-        unimplemented!()
-    }
-}
+mod fingerprinter;
