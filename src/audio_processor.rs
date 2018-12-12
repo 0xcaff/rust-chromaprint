@@ -31,12 +31,8 @@ impl AudioProcessor {
         let mut slicer = self.slicer.take().unwrap();
 
         slicer.process(data, |src| {
-            let mut dst = vec![0i16; MAX_BUFFER_SIZE];
-
-            let (consumed_size, last_idx) = self.resampler.resample(&src, &mut dst);
-            dst.truncate(last_idx + 1);
+            let (consumed_size, dst) = self.resample_slice(src);
             consumer(dst);
-
             consumed_size
         });
 
@@ -45,17 +41,23 @@ impl AudioProcessor {
 
     /// Transcodes any un-transcoded samples and returns if any are left.
     pub fn flush(&mut self) -> Option<Vec<i16>> {
-        // TODO: duplicate code
-        let slicer_ref = self.slicer.as_mut().unwrap();
-        let remaining = slicer_ref.flush();
-        if remaining.len() > 0 {
-            let mut dst = vec![0i16; MAX_BUFFER_SIZE];
-            let (_, last_idx) = self.resampler.resample(&remaining, &mut dst);
-            dst.truncate(last_idx + 1);
-
-            Some(dst)
-        } else {
-            None
+        let mut slicer = self.slicer.take().unwrap();
+        let remaining = slicer.flush();
+        self.slicer = Some(slicer);
+        if remaining.is_empty() {
+            return None;
         }
+
+        let (_, dst) = self.resample_slice(remaining);
+        Some(dst)
+    }
+
+    fn resample_slice(&mut self, src: Vec<i16>) -> (usize, Vec<i16>) {
+        let mut dst = vec![0i16; MAX_BUFFER_SIZE];
+
+        let (consumed_size, last_idx) = self.resampler.resample(&src, &mut dst);
+        dst.truncate(last_idx + 1);
+
+        (consumed_size, dst)
     }
 }

@@ -3,8 +3,8 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FFT;
 
-use std::f64::consts::PI;
 use slicer::FixedSlicer;
+use std::f64::consts::PI;
 
 const FRAME_SIZE: usize = 4096;
 const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
