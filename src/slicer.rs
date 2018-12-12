@@ -71,10 +71,6 @@ where
             increment
         });
     }
-
-    pub fn flush(&mut self) -> Vec<T> {
-        self.slicer.flush()
-    }
 }
 
 #[cfg(test)]
