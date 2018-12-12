@@ -70,7 +70,7 @@ fn prepare_hamming_window(size: usize, scale: f64) -> Vec<f64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{prepare_hamming_window, Fft};
+    use super::{prepare_hamming_window, Fft, FRAME_SIZE};
     use std::error::Error;
     use std::path::PathBuf;
     use test_data;
@@ -94,6 +94,17 @@ mod tests {
         let window = prepare_hamming_window(10, 1.0);
         for idx in 0..10 {
             assert_abs_diff_eq!(expected[idx], window[idx], epsilon = 1e-9);
+        }
+    }
+
+    #[test]
+    fn test_complete_hamming_window() {
+        let expected = test_data::get_hamming_window();
+        let window = prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f64);
+
+        assert_eq!(expected.len(), window.len());
+        for idx in 0..expected.len() {
+            assert_abs_diff_eq!(expected[idx], window[idx], epsilon = 1e-11);
         }
     }
 
