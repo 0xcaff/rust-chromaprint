@@ -15,7 +15,7 @@ pub struct AudioProcessor {
 impl AudioProcessor {
     pub fn new(target_sample_rate: u16, input_sample_rate: u16) -> AudioProcessor {
         AudioProcessor {
-            slicer: Some(Slicer::new(MAX_BUFFER_SIZE, MAX_BUFFER_SIZE)),
+            slicer: Some(Slicer::new(MAX_BUFFER_SIZE)),
             resampler: Resampler::new(
                 target_sample_rate as i32,
                 input_sample_rate as i32,
@@ -33,9 +33,11 @@ impl AudioProcessor {
         slicer.process(data, |src| {
             let mut dst = vec![0i16; MAX_BUFFER_SIZE];
 
-            let (_, last_idx) = self.resampler.resample(&src, &mut dst);
+            let (consumed_size, last_idx) = self.resampler.resample(&src, &mut dst);
             dst.truncate(last_idx + 1);
             consumer(dst);
+
+            consumed_size
         });
 
         self.slicer = Some(slicer);
@@ -43,6 +45,7 @@ impl AudioProcessor {
 
     /// Transcodes any un-transcoded samples and returns if any are left.
     pub fn flush(&mut self) -> Option<Vec<i16>> {
+        // TODO: duplicate code
         let slicer_ref = self.slicer.as_mut().unwrap();
         let remaining = slicer_ref.flush();
         if remaining.len() > 0 {

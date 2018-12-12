@@ -43,7 +43,7 @@ fn test_chromaprint() -> Result<(), Box<dyn Error>> {
     let mut image = Vec::new();
 
     let mut resampled = vec![0i16; samples.len()];
-    let (_, last_idx) = resampler.resample(&samples, &mut resampled);
+    let (_src_consumed, last_idx) = resampler.resample(&samples, &mut resampled);
 
     fft.consume(&resampled[..(last_idx + 1)], |frame| {
         let chroma_features = chroma.handle_frame(&frame);

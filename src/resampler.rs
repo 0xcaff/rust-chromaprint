@@ -324,7 +324,7 @@ mod tests {
             RESAMPLE_SAMPLE_CUTOFF,
         );
         let mut output = vec![0; samples.len()];
-        let (_, last_dst_idx) = resampler.resample(&samples, &mut output);
+        let (_src_consumed, last_dst_idx) = resampler.resample(&samples, &mut output);
         output.truncate(last_dst_idx + 1);
 
         let expected_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

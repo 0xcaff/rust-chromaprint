@@ -3,14 +3,14 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FFT;
 
-use slicer::Slicer;
 use std::f64::consts::PI;
+use slicer::FixedSlicer;
 
 const FRAME_SIZE: usize = 4096;
 const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
 pub struct Fft {
-    slicer: Option<Slicer<i16>>,
+    slicer: Option<FixedSlicer<i16>>,
     fft: Radix4<f64>,
     hamming_window: Vec<f64>,
 }
@@ -18,7 +18,7 @@ pub struct Fft {
 impl Fft {
     pub fn new() -> Fft {
         Fft {
-            slicer: Some(Slicer::new(FRAME_SIZE, FRAME_SIZE - OVERLAP)),
+            slicer: Some(FixedSlicer::new(FRAME_SIZE, FRAME_SIZE - OVERLAP)),
             fft: Radix4::new(FRAME_SIZE, false),
             hamming_window: prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f64),
         }
