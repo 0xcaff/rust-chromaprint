@@ -4,15 +4,15 @@ use rustfft::num_traits::Zero;
 use rustfft::FFT;
 
 use slicer::FixedSlicer;
-use std::f64::consts::PI;
+use std::f32::consts::PI;
 
 const FRAME_SIZE: usize = 4096;
 const OVERLAP: usize = FRAME_SIZE - FRAME_SIZE / 3;
 
 pub struct Fft {
     slicer: Option<FixedSlicer<i16>>,
-    fft: Radix4<f64>,
-    hamming_window: Vec<f64>,
+    fft: Radix4<f32>,
+    hamming_window: Vec<f32>,
 }
 
 impl Fft {
@@ -20,7 +20,7 @@ impl Fft {
         Fft {
             slicer: Some(FixedSlicer::new(FRAME_SIZE, FRAME_SIZE - OVERLAP)),
             fft: Radix4::new(FRAME_SIZE, false),
-            hamming_window: prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f64),
+            hamming_window: prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f32),
         }
     }
 
@@ -28,18 +28,17 @@ impl Fft {
         let mut slicer = self.slicer.take().unwrap();
 
         slicer.process(data, |vec| {
-            let mut converted: Vec<Complex<f64>> = vec
+            let mut converted: Vec<Complex<f32>> = vec
                 .into_iter()
                 .enumerate()
-                .map(|(idx, data)| self.hamming_window[idx] * (data as f64))
-                .map(|num| Complex::new(num as f64, 0.0))
+                .map(|(idx, data)| self.hamming_window[idx] * (data as f32))
+                .map(|num| Complex::new(num, 0.0))
                 .collect();
 
-            let mut output: Vec<Complex<f64>> = vec![Complex::zero(); FRAME_SIZE];
+            let mut output: Vec<Complex<f32>> = vec![Complex::zero(); FRAME_SIZE];
             self.fft.process(&mut converted, &mut output);
 
             let folded = fold_output(&output);
-
             consumer(folded);
         });
 
@@ -47,22 +46,23 @@ impl Fft {
     }
 }
 
-pub fn fold_output(fft: &[Complex<f64>]) -> Vec<f64> {
+pub fn fold_output(fft: &[Complex<f32>]) -> Vec<f64> {
     let half_input = fft.len() / 2;
     let mut output = vec![0.0; half_input + 1];
 
     for idx in 0..(half_input + 1) {
-        output[idx] = fft[idx].re * fft[idx].re + fft[idx].im * fft[idx].im;
+        output[idx] =
+            fft[idx].re as f64 * fft[idx].re as f64 + fft[idx].im as f64 * fft[idx].im as f64;
     }
 
     output
 }
 
-fn prepare_hamming_window(size: usize, scale: f64) -> Vec<f64> {
+fn prepare_hamming_window(size: usize, scale: f32) -> Vec<f32> {
     let mut result = vec![0.0; size];
 
     for idx in 0..size {
-        result[idx] = scale * (0.54 - 0.46 * (idx as f64 * 2.0 * PI / (size as f64 - 1.0)).cos())
+        result[idx] = scale * (0.54 - 0.46 * (idx as f32 * 2.0 * PI / (size as f32 - 1.0)).cos())
     }
 
     result
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_complete_hamming_window() {
         let expected = test_data::get_hamming_window();
-        let window = prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f64);
+        let window = prepare_hamming_window(FRAME_SIZE, 1.0 / ::std::i16::MAX as f32);
 
         assert_eq!(expected.len(), window.len());
         for idx in 0..expected.len() {

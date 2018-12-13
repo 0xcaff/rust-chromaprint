@@ -1,4 +1,4 @@
-pub fn get_hamming_window() -> Vec<f64> {
+pub fn get_hamming_window() -> Vec<f32> {
     vec![
         2.4414807739958633e-06,
         2.4414973722741706e-06,
