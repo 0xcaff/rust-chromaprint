@@ -1,3 +1,4 @@
+extern crate base64;
 extern crate rustfft;
 
 mod audio_processor;
@@ -7,6 +8,7 @@ mod chroma_filter;
 mod chroma_normalize;
 mod classifiers;
 mod combined_buffer;
+mod encode;
 mod fft;
 mod filter;
 mod fingerprint_calculator;
