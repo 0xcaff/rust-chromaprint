@@ -20,8 +20,8 @@ pub fn compress(fingerprint: &[u32], algorithm: u8) -> Vec<u8> {
     }
 
     let header_size = 4;
-    let normal_bits_size = (fingerprint.len() * 3 + 7) / 8;
-    let exceptional_bits_size = (fingerprint.len() * 5 + 7) / 8;
+    let normal_bits_size = (normal_bits.len() * 3 + 7) / 8;
+    let exceptional_bits_size = (exceptional_bits.len() * 5 + 7) / 8;
     let output_size = header_size + normal_bits_size + exceptional_bits_size;
 
     let mut output = vec![0u8; output_size];
