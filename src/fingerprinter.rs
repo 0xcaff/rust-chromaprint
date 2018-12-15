@@ -3,6 +3,7 @@ use chroma::Chroma;
 use chroma_filter::{ChromaFilter, FILTER_COEFFICIENTS};
 use chroma_normalize::normalize_vector;
 use classifiers;
+use encode;
 use fft::Fft;
 use fingerprint_calculator::FingerprintCalculator;
 use fingerprint_compressor;
@@ -80,8 +81,16 @@ impl Fingerprinter {
 pub struct Fingerprint<'a>(pub &'a [u32]);
 
 impl<'a> Fingerprint<'a> {
-    pub fn compress(&self) -> Vec<u8> {
-        fingerprint_compressor::compress(self.0, 1)
+    pub fn compress(&self) -> CompressedFingerprint {
+        CompressedFingerprint(fingerprint_compressor::compress(self.0, 1))
+    }
+}
+
+pub struct CompressedFingerprint(pub Vec<u8>);
+
+impl CompressedFingerprint {
+    pub fn encode(&self) -> String {
+        encode::encode(&self.0)
     }
 }
 
@@ -103,12 +112,13 @@ mod tests {
         fingerprinter.feed(&samples);
         fingerprinter.finish();
 
+        let fingerprint = fingerprinter.fingerprint().compress().encode();
+
+        // Doesn't exactly match the fingerprint from the C library due to small variances in the
+        // FFT library. The fingerprint doesn't need to be an exact match to work with AcoustID.
         assert_eq!(
-            fingerprinter.fingerprint().0,
-            [
-                3740390231, 3739276119, 3730871573, 3743460629, 3743525173, 3744594229, 3727948087,
-                1584920886, 1593302326, 1593295926, 1584907318
-            ]
+            fingerprint,
+            "AQAAC0kkRVHCJEqU4IS6Hs8FH5eh_8jP4ztOHEoYQYwAgABBhog",
         );
 
         Ok(())
