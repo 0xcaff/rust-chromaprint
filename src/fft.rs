@@ -93,7 +93,7 @@ mod tests {
 
         let window = prepare_hamming_window(10, 1.0);
         for idx in 0..10 {
-            assert_abs_diff_eq!(expected[idx], window[idx], epsilon = 1e-9);
+            assert_abs_diff_eq!(expected[idx], window[idx], epsilon = 1e-6);
         }
     }
 
